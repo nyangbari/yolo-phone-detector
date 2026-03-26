@@ -1,0 +1,2 @@
+"""Phone detector application package."""
+
