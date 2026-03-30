@@ -56,6 +56,13 @@ class PhoneDetectorApp:
     def _open_camera(self):
         import cv2
 
+        if self._config.camera_mode == "csi" and not self._opencv_supports_gstreamer(cv2):
+            raise RuntimeError(
+                "OpenCV was built without GStreamer support. Jetson CSI cameras need "
+                "CAP_GSTREAMER + nvarguscamerasrc. Recreate the venv with "
+                "--system-site-packages and use the JetPack-provided python3-opencv package."
+            )
+
         capture = None
         for attempt in range(1, self._config.camera_retries + 1):
             candidate = self._open_capture_candidate(cv2)
@@ -67,6 +74,11 @@ class PhoneDetectorApp:
             time.sleep(1)
 
         if capture is None or not capture.isOpened():
+            if self._config.camera_mode == "csi":
+                raise RuntimeError(
+                    "Could not open the Jetson CSI camera. Check that nvarguscamerasrc works, "
+                    "then try --camera-sensor-id 1 if sensor-id 0 fails."
+                )
             raise RuntimeError("Could not open webcam.")
 
         try:
@@ -93,6 +105,13 @@ class PhoneDetectorApp:
             "video/x-raw, format=BGR ! "
             "appsink drop=true max-buffers=1"
         )
+
+    def _opencv_supports_gstreamer(self, cv2) -> bool:
+        try:
+            build_info = cv2.getBuildInformation()
+        except Exception:
+            return False
+        return "GStreamer:                   YES" in build_info or "GStreamer: YES" in build_info
 
     def _cooldown_ready(self) -> bool:
         return self._gate.cooldown_ready()

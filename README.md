@@ -36,8 +36,26 @@ pip install -r requirements.txt
 This installs:
 
 - `ultralytics`
-- `opencv-python`
+- `opencv-python` on desktop environments
 - `numpy`
+
+### Jetson Notes
+
+For Jetson CSI cameras such as IMX219, use the JetPack OpenCV package instead of the `pip`
+wheel so `cv2` keeps GStreamer support for `nvarguscamerasrc`.
+
+```bash
+sudo apt update
+sudo apt install -y python3-opencv v4l-utils gstreamer1.0-tools
+
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
+
+On `aarch64` systems, `requirements.txt` skips `opencv-python` and expects the system
+`python3-opencv` package instead.
 
 ## Model File
 
@@ -156,6 +174,25 @@ If the camera does not open:
 - Make sure another app is not already using the webcam
 - For Jetson CSI cameras, use `--camera-mode csi`
 - If IMX219 on an Orin Nano shows a green screen or fails on CAM0, try `--camera-sensor-id 1`
+- On Jetson, confirm OpenCV has GStreamer enabled:
+
+```bash
+python3 - <<'PY'
+import cv2
+for line in cv2.getBuildInformation().splitlines():
+    if "GStreamer" in line:
+        print(line)
+PY
+```
+
+- If GStreamer says `NO`, recreate the virtual environment with `--system-site-packages`
+- Test the CSI camera directly through Argus:
+
+```bash
+gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! \
+  'video/x-raw(memory:NVMM), width=1280, height=720, format=(string)NV12, framerate=(fraction)30/1' ! \
+  nvvidconv ! xvimagesink -e
+```
 
 If the model file is not found:
 
