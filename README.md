@@ -80,6 +80,18 @@ Use a different camera:
 python3 app.py --camera-index 1
 ```
 
+Use a Jetson CSI camera such as IMX219:
+
+```bash
+python3 app.py --camera-mode csi --camera-sensor-id 0
+```
+
+If you are using an Orin Nano developer kit and CAM0 does not work, try:
+
+```bash
+python3 app.py --camera-mode csi --camera-sensor-id 1
+```
+
 Adjust detection sensitivity:
 
 ```bash
@@ -99,7 +111,13 @@ python3 app.py --help
 Common options:
 
 - `--model`: path to the YOLO model file
+- `--camera-mode`: `usb` for UVC webcams, `csi` for Jetson CSI cameras
 - `--camera-index`: webcam index to open
+- `--camera-sensor-id`: Jetson CSI sensor-id for `nvarguscamerasrc`
+- `--camera-width`: requested camera width
+- `--camera-height`: requested camera height
+- `--camera-fps`: requested camera FPS
+- `--camera-flip-method`: Jetson CSI flip/rotation control
 - `--confidence`: minimum confidence threshold
 - `--min-area-ratio`: minimum detection box area relative to the frame
 - `--cooldown`: cooldown in seconds between alerts
@@ -136,6 +154,8 @@ If the camera does not open:
 
 - Try `--camera-index 1` or `--camera-index 2`
 - Make sure another app is not already using the webcam
+- For Jetson CSI cameras, use `--camera-mode csi`
+- If IMX219 on an Orin Nano shows a green screen or fails on CAM0, try `--camera-sensor-id 1`
 
 If the model file is not found:
 

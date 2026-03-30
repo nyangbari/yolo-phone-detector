@@ -58,7 +58,7 @@ class PhoneDetectorApp:
 
         capture = None
         for attempt in range(1, self._config.camera_retries + 1):
-            candidate = cv2.VideoCapture(self._config.camera_index)
+            candidate = self._open_capture_candidate(cv2)
             if candidate.isOpened():
                 capture = candidate
                 break
@@ -74,6 +74,25 @@ class PhoneDetectorApp:
         except Exception:
             pass
         return capture
+
+    def _open_capture_candidate(self, cv2):
+        if self._config.camera_mode == "csi":
+            pipeline = self._build_jetson_csi_pipeline()
+            return cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+        return cv2.VideoCapture(self._config.camera_index)
+
+    def _build_jetson_csi_pipeline(self) -> str:
+        return (
+            "nvarguscamerasrc "
+            f"sensor-id={self._config.camera_sensor_id} ! "
+            f"video/x-raw(memory:NVMM), width={self._config.camera_width}, height={self._config.camera_height}, "
+            f"format=NV12, framerate={self._config.camera_fps}/1 ! "
+            f"nvvidconv flip-method={self._config.camera_flip_method} ! "
+            "video/x-raw, format=BGRx ! "
+            "videoconvert ! "
+            "video/x-raw, format=BGR ! "
+            "appsink drop=true max-buffers=1"
+        )
 
     def _cooldown_ready(self) -> bool:
         return self._gate.cooldown_ready()

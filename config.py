@@ -34,7 +34,13 @@ def resolve_model_path(model_path: str) -> str:
 @dataclass(slots=True)
 class AppConfig:
     model_path: str = DEFAULT_MODEL_NAME
+    camera_mode: str = "usb"
     camera_index: int = 0
+    camera_sensor_id: int = 0
+    camera_width: int = 1280
+    camera_height: int = 720
+    camera_fps: int = 30
+    camera_flip_method: int = 0
     confidence_threshold: float = 0.45
     min_box_area_ratio: float = 0.012
     cooldown_seconds: float = 4.0
@@ -52,7 +58,23 @@ def parse_args() -> AppConfig:
         description="Watch the webcam for phones and log an alert when one is detected."
     )
     parser.add_argument("--model", default=DEFAULT_MODEL_NAME, help="Path to a YOLO model file.")
+    parser.add_argument(
+        "--camera-mode",
+        choices=("usb", "csi"),
+        default="usb",
+        help="Camera capture backend. Use 'csi' for Jetson CSI cameras like IMX219.",
+    )
     parser.add_argument("--camera-index", type=int, default=0, help="Camera index to open.")
+    parser.add_argument("--camera-sensor-id", type=int, default=0, help="Jetson CSI sensor-id for nvarguscamerasrc.")
+    parser.add_argument("--camera-width", type=int, default=1280, help="Requested camera capture width.")
+    parser.add_argument("--camera-height", type=int, default=720, help="Requested camera capture height.")
+    parser.add_argument("--camera-fps", type=int, default=30, help="Requested camera frames per second.")
+    parser.add_argument(
+        "--camera-flip-method",
+        type=int,
+        default=0,
+        help="Jetson nvvidconv flip-method value to rotate or mirror the CSI camera image.",
+    )
     parser.add_argument("--confidence", type=float, default=0.45, help="Minimum confidence to accept.")
     parser.add_argument(
         "--min-area-ratio",
@@ -82,7 +104,13 @@ def parse_args() -> AppConfig:
 
     return AppConfig(
         model_path=resolve_model_path(args.model),
+        camera_mode=args.camera_mode,
         camera_index=args.camera_index,
+        camera_sensor_id=args.camera_sensor_id,
+        camera_width=args.camera_width,
+        camera_height=args.camera_height,
+        camera_fps=args.camera_fps,
+        camera_flip_method=args.camera_flip_method,
         confidence_threshold=args.confidence,
         min_box_area_ratio=args.min_area_ratio,
         cooldown_seconds=args.cooldown,
